@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="no">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Lokal Brukerdata Test</title>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 40px;
+        line-height: 1.6;
+      }
+      form {
+        background: #f4f4f4;
+        padding: 20px;
+        border-radius: 8px;
+        max-width: 400px;
+      }
+      input,
+      textarea,
+      button {
+        width: 100%;
+        margin-bottom: 12px;
+        padding: 8px;
+        box-sizing: border-box;
+      }
+      button {
+        background-color: #007bff;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 4px;
+      }
+      button:hover {
+        background-color: #0056b3;
+      }
+      ul {
+        padding-left: 0;
+        list-style: none;
+        max-width: 600px;
+      }
+      li {
+        background: #fafafa;
+        border: 1px solid #ddd;
+        padding: 10px 12px;
+        margin-bottom: 8px;
+        border-radius: 6px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .delete-btn {
+        width: auto;
+        margin: 0 0 0 12px;
+        padding: 6px 10px;
+        background-color: #dc3545;
+      }
+      .delete-btn:hover {
+        background-color: #a71d2a;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Legg inn data lokalt</h1>
+
+    <form id="userForm">
+      <label for="name">Navn:</label>
+      <input type="text" id="name" required />
+
+      <label for="email">Email:</label>
+      <input type="email" id="email" required />
+
+      <label for="message">Melding:</label>
+      <textarea id="message"></textarea>
+
+      <button type="submit">Send til lokal backend</button>
+    </form>
+
+    <h2>Kontakter i databasen</h2>
+    <ul id="userList"></ul>
+
+    <script>
+      const form = document.getElementById("userForm");
+      const userList = document.getElementById("userList");
+      const API_URL = "http://127.0.0.1:8000/users";
+
+      async function fetchUsers() {
+        try {
+          const response = await fetch(API_URL);
+          const data = await response.json();
+          userList.innerHTML = "";
+
+          data.users.forEach((user) => {
+            const li = document.createElement("li");
+
+            const textSpan = document.createElement("span");
+            textSpan.textContent = `ID: ${user[0]} | Navn: ${user[1]} | Email: ${user[2]} | Melding: ${user[3] || ""}`;
+
+            const deleteBtn = document.createElement("button");
+            deleteBtn.textContent = "Slett";
+            deleteBtn.className = "delete-btn";
+            deleteBtn.onclick = () => deleteUser(user[0]);
+
+            li.appendChild(textSpan);
+            li.appendChild(deleteBtn);
+            userList.appendChild(li);
+          });
+        } catch (error) {
+          console.error("Kunne ikke hente kontakter:", error);
+        }
+      }
+
+      async function deleteUser(id) {
+        try {
+          await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+          fetchUsers();
+        } catch (error) {
+          console.error("Kunne ikke slette kontakt:", error);
+        }
+      }
+
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
+
+        const userData = {
+          name: document.getElementById("name").value,
+          email: document.getElementById("email").value,
+          message: document.getElementById("message").value,
+        };
+
+        try {
+          await fetch(API_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(userData),
+          });
+
+          form.reset();
+          fetchUsers();
+        } catch (error) {
+          console.error("Kunne ikke lagre kontakt:", error);
+        }
+      });
+
+      fetchUsers();
+    </script>
+  </body>
+</html>
